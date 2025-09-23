@@ -1,6 +1,8 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Iinclude
+LDFLAGS = -Llib
+LDLIBS = -lmyutils
 
 # Directories
 SRC = src
@@ -14,28 +16,35 @@ MAIN_OBJ = $(OBJ)/main.o
 LIB_SRCS = $(SRC)/mystrfunctions.c $(SRC)/myfilefunctions.c
 LIB_OBJS = $(OBJ)/mystrfunctions.o $(OBJ)/myfilefunctions.o
 STATIC_LIB = $(LIB)/libmyutils.a
-TARGET = $(BIN)/client_static
+SHARED_LIB = $(LIB)/libmyutils.so
+STATIC_TARGET = $(BIN)/client_static
+DYNAMIC_TARGET = $(BIN)/client_dynamic
 
-# Default target
-all: $(TARGET)
+# Default target: build both
+all: $(STATIC_TARGET) $(DYNAMIC_TARGET)
 
-# Link main program with static library
-$(TARGET): $(MAIN_OBJ) $(STATIC_LIB) | $(BIN)
+# ---- Static build ----
+$(STATIC_TARGET): $(MAIN_OBJ) $(STATIC_LIB) | $(BIN)
 	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(STATIC_LIB)
 
-# Build static library
 $(STATIC_LIB): $(LIB_OBJS) | $(LIB)
 	ar rcs $@ $(LIB_OBJS)
 
-# Compile main.c
+# ---- Dynamic build ----
+$(DYNAMIC_TARGET): $(MAIN_OBJ) $(SHARED_LIB) | $(BIN)
+	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(LDFLAGS) $(LDLIBS)
+
+$(SHARED_LIB): $(LIB_OBJS) | $(LIB)
+	$(CC) -shared -o $@ $(LIB_OBJS)
+
+# ---- Compilation rules ----
 $(OBJ)/main.o: $(MAIN_SRC) | $(OBJ)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile library source files
 $(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -fPIC -c $< -o $@
 
-# Create directories if they don't exist
+# ---- Directories ----
 $(OBJ):
 	mkdir -p $(OBJ)
 
@@ -45,7 +54,7 @@ $(BIN):
 $(LIB):
 	mkdir -p $(LIB)
 
-# Clean build
+# ---- Clean ----
 clean:
-	rm -rf $(OBJ)/*.o $(TARGET) $(STATIC_LIB)
+	rm -rf $(OBJ)/*.o $(STATIC_TARGET) $(DYNAMIC_TARGET) $(STATIC_LIB) $(SHARED_LIB)
 
