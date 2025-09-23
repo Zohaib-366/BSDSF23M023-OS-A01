@@ -9,6 +9,7 @@ SRC = src
 OBJ = obj
 BIN = bin
 LIB = lib
+MAN = man/man3
 
 # Files
 MAIN_SRC = $(SRC)/main.c
@@ -19,6 +20,11 @@ STATIC_LIB = $(LIB)/libmyutils.a
 SHARED_LIB = $(LIB)/libmyutils.so
 STATIC_TARGET = $(BIN)/client_static
 DYNAMIC_TARGET = $(BIN)/client_dynamic
+
+# Install directories
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+MANDIR = $(PREFIX)/share/man/man3
 
 # Default target: build both
 all: $(STATIC_TARGET) $(DYNAMIC_TARGET)
@@ -53,6 +59,20 @@ $(BIN):
 
 $(LIB):
 	mkdir -p $(LIB)
+
+# ---- Install ----
+install: $(DYNAMIC_TARGET)
+	install -d $(BINDIR)
+	install -m 755 $(DYNAMIC_TARGET) $(BINDIR)/client
+	install -d $(MANDIR)
+	install -m 644 $(MAN)/* $(MANDIR)
+
+# ---- Uninstall ----
+uninstall:
+	rm -f $(BINDIR)/client
+	for f in $(MAN)/*; do \
+		rm -f $(MANDIR)/$$(basename $$f); \
+	done
 
 # ---- Clean ----
 clean:

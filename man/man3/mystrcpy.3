@@ -1,0 +1,23 @@
+.TH MYSTRCPY 3 "September 2025" "v0.4.1" "Library Functions Manual"
+.SH NAME
+mystrcpy \- copy a string from source to destination
+.SH SYNOPSIS
+.B #include "mystrfunctions.h"
+.br
+.B int mystrcpy(char *dest, const char *src);
+.SH DESCRIPTION
+The
+.B mystrcpy()
+function copies the C-string pointed to by
+.I src
+(including the terminating null byte) into the buffer pointed to by
+.I dest.
+The caller must ensure that
+.I dest
+has enough space to hold the contents of
+.I src.
+.SH RETURN VALUE
+Returns the number of characters copied (excluding the terminating null character).
+.SH AUTHOR
+Muhammad Zohaib <zohaib366tda@gmail.com>
+
