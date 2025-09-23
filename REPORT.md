@@ -1,33 +1,3 @@
-At this point, Feature 3 (Static Library Build) is fully complete:
-
-main.c links against lib/libmyutils.a
-
-Makefile is updated for static library creation
-
-Executable bin/client_static works correctly
-
-Git workflow: static-build branch created, committed, and merged
-
-Tag v0.2.1-static created and pushed
-
-GitHub release drafted with client_static and libmyutils.a attached
-
-Your assignment now has Feature 1 (single-file), Feature 2 (multi-file), and Feature 3 (static library) fully implemented and versioned.
-
-The next steps are:
-
-Prepare REPORT.md combining Features 2 and 3 with explanations.
-
-Ensure your Makefile and project structure are documented clearly in the report.
-
-If you want, I can draft a complete REPORT.md covering everything so you can submit it immediately. Do you want me to do that next?
-
-You said:
-ok 
-ChatGPT said:
-
-Great! Let’s draft a complete REPORT.md for your assignment, covering Features 2 (Multi-file Build) and 3 (Static Library Build). I’ll keep it clear, structured, and ready for submission.
-
 # BSDSF23M023-OS-A01 REPORT
 
 ## Feature 2: Multi-file Compilation
@@ -146,3 +116,127 @@ $(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(STATIC_LIB)
 - Feature 2 demonstrates basic multi-file compilation.
 - Feature 3 shows how to modularize code with a static library for scalability.
 - Git workflow, tags, and releases document progress and provide versioned snapshots.
+Feature 4: Dynamic Library Build
+
+Objective:
+Enhance the project by building and linking against a dynamic library (libmyutils.so). Unlike static linking, where function code is copied into the executable, dynamic linking keeps the executable smaller and allows the library to be shared by multiple programs at runtime.
+
+Project Structure (New Files/Changes):
+
+BSDSF23M023-OS-A01/
+├── lib/
+│   ├── libmyutils.a
+│   └── libmyutils.so       # NEW: Shared library
+├── bin/
+│   ├── client_static
+│   └── client_dynamic      # NEW: Executable using dynamic linking
+├── src/
+│   ├── main.c
+│   ├── mystrfunctions.c
+│   └── myfilefunctions.c
+├── include/
+│   ├── mystrfunctions.h
+│   └── myfilefunctions.h
+├── Makefile (updated)
+
+
+Key Points in Makefile:
+
+Added rules to compile Position-Independent Code (PIC) objects with -fPIC.
+
+New target to build the shared library:
+
+$(DYNAMIC_LIB): $(LIB_OBJS) | $(LIB)
+	$(CC) -shared -o $@ $(LIB_OBJS)
+
+
+New executable rule to link against libmyutils.so:
+
+$(DYNAMIC_TARGET): $(MAIN_OBJ) $(DYNAMIC_LIB) | $(BIN)
+	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) -L$(LIB) -lmyutils
+
+
+Workflow:
+
+Created branch dynamic-build from main.
+
+Modified Makefile for dynamic library build.
+
+Built shared library:
+
+gcc -fPIC -c src/mystrfunctions.c -o obj/mystrfunctions.o
+gcc -fPIC -c src/myfilefunctions.c -o obj/myfilefunctions.o
+gcc -shared -o lib/libmyutils.so obj/mystrfunctions.o obj/myfilefunctions.o
+
+
+Linked main.o against libmyutils.so to produce bin/client_dynamic.
+
+Verified executable size difference:
+
+ls -lh bin/
+-rwxr-xr-x ... client_static   (~bigger)
+-rwxr-xr-x ... client_dynamic  (~smaller)
+
+
+→ The dynamic client is smaller because it references functions at runtime instead of embedding them.
+
+Initial run of ./bin/client_dynamic failed with:
+
+error while loading shared libraries: libmyutils.so: cannot open shared object file
+
+
+Fixed by setting LD_LIBRARY_PATH:
+
+export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
+./bin/client_dynamic
+
+
+→ Executed successfully, producing correct output.
+
+Verified linking with ldd bin/client_dynamic:
+
+libmyutils.so => ./lib/libmyutils.so
+libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6
+...
+
+
+Committed changes with message:
+
+git commit -m "Added dynamic library build: client_dynamic with libmyutils.so"
+
+
+Created annotated tag:
+
+git tag -a v0.3.1-dynamic -m "Dynamic Library Build"
+git push origin v0.3.1-dynamic
+
+
+Drafted GitHub release Version 0.3.1: Dynamic Library Build with assets:
+
+bin/client_dynamic
+
+lib/libmyutils.so
+
+Report Questions & Answers
+
+1. What is Position-Independent Code (-fPIC) and why is it fundamental for shared libraries?
+
+Position-Independent Code is machine code that executes correctly regardless of its memory load address.
+
+Shared libraries (.so) may be loaded at different addresses in different processes, so they must not assume a fixed address.
+
+-fPIC ensures all memory accesses are relative, making the code relocatable.
+
+2. Explain the difference in file size between static and dynamic clients. Why does this difference exist?
+
+client_static is larger because all library function code is copied directly into the executable.
+
+client_dynamic is smaller because it only stores references to library functions. At runtime, the shared library is loaded into memory and linked dynamically.
+
+3. What is the LD_LIBRARY_PATH environment variable? Why was it necessary to set it?
+
+LD_LIBRARY_PATH tells the dynamic loader where to search for .so files before system paths.
+
+Without setting it, the loader could not find ./lib/libmyutils.so.
+
+This shows that the OS loader’s job is to resolve symbols and locate required shared libraries at runtime.
